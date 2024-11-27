@@ -7,7 +7,7 @@ public class Main {
 
         for (int y = 0; y < CONSTANTS.BOARD_HEIGHT; y++) {
             for (int x = 0; x < CONSTANTS.BOARD_WIDTH; x++) {
-                board[y][x] = 0;
+                board[y][x] = CONSTANTS.EMPTY_FILED_CODE;
             }
         }
 
