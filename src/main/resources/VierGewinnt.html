@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vier Gewinnt by Mathis Fritz</title>
+</head>
+<body>
+    <canvas width="1080" height="580" id="canvas"></canvas>
+    <br>
+    <button id="start-button" onclick="startGame()" class="btn btn-outline-primary m-1">Start Game!</button>
+    <button id="reset-button" onclick="restartGame()" class="btn btn-outline-primary m-1" disabled>Restart Game!</button>
+    <div id="output"></div>
+
+    <script>
+        const canvas = document.querySelector("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const START_BUTTON = document.getElementById("start-button");
+        const RESET_BUTTON = document.getElementById("reset-button");
+        const OUTPUT_DIV = document.getElementById("output");
+
+        const WIDTH_CANVAS = canvas.width;
+        const HEIGHT_CANVAS = canvas.height;
+
+        const WIDTH_BOARD = 7;
+        const HEIGHT_BOARD = 6;
+
+        const BORDER_WIDTH = 10;
+
+        const HEIGHT_CELL = Math.floor((HEIGHT_CANVAS / HEIGHT_BOARD) - BORDER_WIDTH - Math.floor(BORDER_WIDTH  / HEIGHT_BOARD));
+        const WIDTH_CELL = Math.floor((WIDTH_CANVAS / WIDTH_BOARD) - BORDER_WIDTH - Math.floor(BORDER_WIDTH  / WIDTH_BOARD));
+
+        const COLOR_PLAYER_1 = "yellow";
+        const COLOR_PLAYER_2 = "red";
+        const COLOR_BORDER = "black";
+
+        const DEBUG = false;
+
+        let BOARD = undefined;
+        let CURRENT_PLAYER = 1;
+        let GAME_ACTIVE = false;
+
+        function startGame(){
+            //Aufsetzen des Boards und Canvas
+            initBoard();
+            initCanvas();
+
+            //Benutzer Input erkennung hinzufügen
+            canvas.addEventListener("mousedown", function (event) {
+                getUserInput(canvas, event);
+            });
+
+            //Sonstige Sachen aufsetzen
+            START_BUTTON.setAttribute("disabled", "disabled");
+            RESET_BUTTON.removeAttribute("disabled");
+            OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn."
+            GAME_ACTIVE = true;
+        }
+
+        function restartGame(){
+            //Game Loop unterbrechen
+            GAME_ACTIVE = false;
+
+            //Board resetten
+            if (DEBUG) console.log("Resetting Game");
+            ctx.fillStyle = "white";
+            ctx.fillRect(0,0, WIDTH_CANVAS, HEIGHT_CANVAS);
+
+            //Neues Board aufsetzen + Canvas Aufsetzen + sonstige Sachen aufsetzen
+            initBoard();
+            initCanvas();
+            CURRENT_PLAYER = 1;
+            OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn."
+            GAME_ACTIVE = true;
+        }
+
+        function initBoard() {
+            BOARD = createBoard(WIDTH_BOARD, HEIGHT_BOARD);
+            //Gesamtes Board mit dem Code 0 befüllen
+            for (let y = 0; y < HEIGHT_BOARD; y++){
+                for (let x = 0; x < WIDTH_BOARD; x++){
+                    BOARD[y][x] = 0;
+                }
+            }
+        }
+
+        function getUserInput(canvas, event){
+            if(!GAME_ACTIVE){return;}
+            //Herausfinden der X Koordinate, relativ zum Canvas
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+
+            //Benutzer Input überprüfen
+            let user_input = Math.floor((x / (WIDTH_CELL +  BORDER_WIDTH)));
+            if(DEBUG) console.log("User inputted the following Row: " + user_input);
+
+            if (DEBUG) console.log("Checking User Input");
+            if (user_input < 0 || user_input > BORDER_WIDTH){return;}
+
+            if(DEBUG) console.log("Computing next Board");
+            //Nächstes Board Berechnen
+            computeNextBoard(user_input);
+        }
+
+        function createBoard(width, height){
+            if(DEBUG) console.log("Creating new Board");
+            //Erstelle einen Array mit height-vielen Zeilen
+            let board = new Array(height);
+            //Befülle jede Zeile mit einem Array mit width-vielen einträgen
+            for (let i = 0; i < board.length; i++) {
+                board[i] = new Array(width);
+            }
+            return board;
+        }
+
+        function initCanvas(){
+            //Zeichnen der Horizontalen Linien
+            for (let y = 0; y < HEIGHT_BOARD + 1; y++) {
+                let start_y = y * (BORDER_WIDTH + HEIGHT_CELL);
+                if(DEBUG) console.log("Drawing border lines. width cell: " + WIDTH_CELL + ", start_y: " + start_y);
+
+                ctx.fillStyle = COLOR_BORDER;
+                ctx.fillRect(0, start_y, WIDTH_CANVAS, BORDER_WIDTH);
+            }
+
+            //Zeichnen der Vertikalen Linien
+            for (let x = 0; x < WIDTH_BOARD + 1; x++) {
+                let start_x = x * (BORDER_WIDTH + WIDTH_CELL);
+                if(DEBUG) console.log("Drawing border lines. width cell: " + WIDTH_CELL + ", start_x: " + start_x);
+
+                ctx.fillStyle = COLOR_BORDER;
+                ctx.fillRect(start_x, 0, BORDER_WIDTH, HEIGHT_CANVAS);
+            }
+        }
+
+        function drawBoard(){
+            for (let y = 0; y < HEIGHT_BOARD; y++){
+                for (let x = 0; x < WIDTH_BOARD; x++){
+                    //Entsprechend dem Board-Code die elemente zeichnen
+                    if (BOARD[y][x] === 0){
+
+                    }else if (BOARD[y][x] === 1){
+                        drawCell(x, y, COLOR_PLAYER_1);
+                    }else if (BOARD[y][x] === 2){
+                        drawCell(x, y, COLOR_PLAYER_2);
+                    }else {
+                        restartGame();
+                        console.error("An Error Occurred while trying to render the Board on the Canvas, Illegal State: " + BOARD[y][x] + " at x: " + x + ", y: " + y);
+                    }
+                }
+            }
+        }
+
+        function drawCell(x, y, color){
+            //Umrechnen der Board Koordinaten in Canvas koordinaten
+            let start_x = (x * (WIDTH_CELL +  BORDER_WIDTH)) + BORDER_WIDTH;
+            let start_y = (y * (HEIGHT_CELL +  BORDER_WIDTH)) + BORDER_WIDTH;
+
+            if(DEBUG) console.log("Drawing Cell at x: " + x + ", y: " + y + ", start_x: " + start_x + ", start_y: " + start_y);
+            ctx.fillStyle = color;
+            ctx.fillRect(start_x, start_y, WIDTH_CELL, HEIGHT_CELL);
+        }
+
+        function computeNextBoard(x){
+            for (let y = 0; y < HEIGHT_BOARD; y++) {
+                //Spieler farbe in den unterst möglichen Slot malen
+                if(!freeUnderneath(x, y)){
+                    //Überschreiben am oberen Rand vermeiden
+                    if (BOARD[y][x] !== 0) {
+                        OUTPUT_DIV.innerText = "this Row is already filled, please choose another one!";
+                        break;
+                    }
+                    if (DEBUG) console.log("Setting x: " + x + ", y: " + y + ", to Player: " + CURRENT_PLAYER);
+                    BOARD[y][x] = CURRENT_PLAYER;
+
+                    if(DEBUG) console.log("Drawing Board to Screen");
+                    drawBoard();
+
+                    //Überprüfen, ob ein Spieler gewonnen hat
+                    if (hasPlayerWonGame(x, y)) {
+                        OUTPUT_DIV.innerText = "Player " + CURRENT_PLAYER + " won!";
+
+                        if (DEBUG) console.log("Stopping Game because a Player Won");
+                        //Unterbrechen des game Loops
+                        GAME_ACTIVE = false;
+                        break;
+                    }
+
+                    if(DEBUG) console.log("Switching Player");
+                    CURRENT_PLAYER = CURRENT_PLAYER === 1 ? 2 : 1;
+                    OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn."
+                    break;
+                }
+            }
+        }
+
+        function freeUnderneath(x, y){
+            if (y === HEIGHT_BOARD - 1) {
+                return false;
+            }
+            return BOARD[y + 1][x] !== 1 && BOARD[y + 1][x] !== 2;
+        }
+
+        function hasPlayerWonGame(x, y) {
+            //Überprüfen horizontal
+            if (countConsecutive(x, y, 0, 1) +
+                countConsecutive(x, y, 0, -1) - 1 >= 4) {
+                return true;
+            }
+
+            //Überprüfen vertikal
+            if (countConsecutive(x, y, 1, 0) +
+                countConsecutive(x, y, -1, 0) - 1 >= 4) {
+                return true;
+            }
+
+            //Überprüfen diagonal (unten-links zu oben-rechts)
+            if (countConsecutive(x, y, 1, 1) +
+                countConsecutive(x, y, -1, -1) - 1 >= 4) {
+                return true;
+            }
+
+            //Überprüfen diagonal (oben-links zu unten-rechts)
+            if (countConsecutive(x, y, 1, -1) +
+                countConsecutive(x, y, -1, 1) - 1 >= 4) {
+                return true;
+            }
+            return false;
+        }
+
+        function countConsecutive(x, y, directionX, directionY) {
+            let count = 0;
+
+            //In gegebene Richtungen überprüfen, bis kein Feld des Spielers mehr kommt,
+            //oder bis der Rand des Boards erreicht wurde
+            while (x >= 0 && x < WIDTH_BOARD && y >= 0 && y < HEIGHT_BOARD && BOARD[y][x] === CURRENT_PLAYER) {
+                count++;
+                x += directionX;
+                y += directionY;
+            }
+            return count;
+        }
+    </script>
+</body>
+</html>
