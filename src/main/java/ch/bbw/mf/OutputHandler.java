@@ -26,11 +26,16 @@ public class OutputHandler {
                 }else if (board[y][x] == CONSTANTS.PLAYER_2_FIELD_CODE) {
                     line.append(CONSTANTS.CHAR_PLAYER_2);
                 }else{
-                    throw new IllegalArgumentException("Illegal Code in grid");
+                    throw new IllegalArgumentException("Illegal Code in grid at x: " + x + " y: " + y + ", state: " + board[y][x]);
                 }
             }
             System.out.println(line);
         }
+        StringBuilder line = new StringBuilder();
+        for (int i = 1; i < width + 1; i++) {
+            line.append(i);
+        }
+        System.out.println(line);
     }
 
     public int promptForUserInput(int currentPlayer, int size_board) {
