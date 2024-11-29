@@ -9,17 +9,72 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Vier Gewinnt by Mathis Fritz</title>
+    <style>
+        /* Make the canvas fill the screen */
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 90vh;
+        }
+        /* Style for buttons */
+        .button {
+            position: fixed; /* Keeps them on top of the canvas */
+            z-index: 10; /* Ensure they are above the canvas */
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .div {
+            position: fixed; /* Keeps them on top of the canvas */
+            z-index: 10; /* Ensure they are above the canvas */
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+        }
+
+        #output {
+            bottom: 10px;
+            right: 5vw;
+        }
+
+        #start-button {
+            bottom: 10px;
+            left: 20vw;
+        }
+        #reset-button {
+            bottom: 10px;
+            right: 55vw;
+        }
+    </style>
 </head>
 <body>
     <canvas width="1080" height="580" id="canvas"></canvas>
     <br>
-    <button id="start-button" onclick="startGame()" class="btn btn-outline-primary m-1">Start Game!</button>
-    <button id="reset-button" onclick="restartGame()" class="btn btn-outline-primary m-1" disabled>Restart Game!</button>
-    <div id="output"></div>
+    <button id="start-button" onclick="startGame()" class="btn btn-outline-primary m-1 button">Start Game!</button>
+    <button id="reset-button" onclick="restartGame()" class="btn btn-outline-primary m-1 button" disabled>Restart Game!</button>
+    <div id="output" class="div"></div>
 
     <script>
         const canvas = document.querySelector("canvas");
         const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
         const START_BUTTON = document.getElementById("start-button");
         const RESET_BUTTON = document.getElementById("reset-button");
@@ -31,14 +86,16 @@
         const WIDTH_BOARD = 7;
         const HEIGHT_BOARD = 6;
 
-        const BORDER_WIDTH = 10;
+        const BORDER_WIDTH = 12;
 
-        const HEIGHT_CELL = Math.floor((HEIGHT_CANVAS / HEIGHT_BOARD) - BORDER_WIDTH - Math.floor(BORDER_WIDTH  / HEIGHT_BOARD));
-        const WIDTH_CELL = Math.floor((WIDTH_CANVAS / WIDTH_BOARD) - BORDER_WIDTH - Math.floor(BORDER_WIDTH  / WIDTH_BOARD));
+        const HEIGHT_CELL = Math.floor((HEIGHT_CANVAS / HEIGHT_BOARD) - BORDER_WIDTH);
+        const WIDTH_CELL = Math.floor((WIDTH_CANVAS / WIDTH_BOARD) - BORDER_WIDTH);
+
+        const RADIUS_CIRCLE = Math.floor(Math.min(HEIGHT_CELL, WIDTH_CELL) / 2);
 
         const COLOR_PLAYER_1 = "yellow";
         const COLOR_PLAYER_2 = "red";
-        const COLOR_BORDER = "black";
+        const COLOR_BOARD = "blue";
 
         const DEBUG = false;
 
@@ -120,22 +177,18 @@
         }
 
         function initCanvas(){
-            //Zeichnen der Horizontalen Linien
-            for (let y = 0; y < HEIGHT_BOARD + 1; y++) {
-                let start_y = y * (BORDER_WIDTH + HEIGHT_CELL);
-                if(DEBUG) console.log("Drawing border lines. width cell: " + WIDTH_CELL + ", start_y: " + start_y);
+            //Setze Hintergrund auf die vorgegebene farbe
+            ctx.fillStyle = COLOR_BOARD;
+            ctx.fillRect(0, 0, WIDTH_CANVAS, HEIGHT_CANVAS);
 
-                ctx.fillStyle = COLOR_BORDER;
-                ctx.fillRect(0, start_y, WIDTH_CANVAS, BORDER_WIDTH);
-            }
+            for (let y = 0; y < HEIGHT_BOARD; y++) {
+                for (let x = 0; x < WIDTH_BOARD; x++) {
+                    let start_x = Math.floor((2 * x + 1) * (BORDER_WIDTH + WIDTH_CELL) / 2);
+                    let start_y = Math.floor((2 * y + 1) * (BORDER_WIDTH + HEIGHT_CELL) / 2);
+                    if(DEBUG) console.log("Carving Circle from Board, center x: " + start_x + ", center y: " + start_y);
 
-            //Zeichnen der Vertikalen Linien
-            for (let x = 0; x < WIDTH_BOARD + 1; x++) {
-                let start_x = x * (BORDER_WIDTH + WIDTH_CELL);
-                if(DEBUG) console.log("Drawing border lines. width cell: " + WIDTH_CELL + ", start_x: " + start_x);
-
-                ctx.fillStyle = COLOR_BORDER;
-                ctx.fillRect(start_x, 0, BORDER_WIDTH, HEIGHT_CANVAS);
+                    drawCircle(start_x, start_y, RADIUS_CIRCLE, "white");
+                }
             }
         }
 
@@ -158,13 +211,25 @@
         }
 
         function drawCell(x, y, color){
-            //Umrechnen der Board Koordinaten in Canvas koordinaten
-            let start_x = (x * (WIDTH_CELL +  BORDER_WIDTH)) + BORDER_WIDTH;
-            let start_y = (y * (HEIGHT_CELL +  BORDER_WIDTH)) + BORDER_WIDTH;
+            let start_x = Math.floor((2 * x + 1) * ((BORDER_WIDTH + WIDTH_CELL) / 2));
+            let start_y = Math.floor((2 * y + 1) * ((BORDER_WIDTH + HEIGHT_CELL) / 2));
 
-            if(DEBUG) console.log("Drawing Cell at x: " + x + ", y: " + y + ", start_x: " + start_x + ", start_y: " + start_y);
+            if (DEBUG) console.log("Drawing Circle for Player: " + CURRENT_PLAYER + ", center x: " + start_x + ", center y: " + start_y);
+            drawCircle(start_x, start_y, RADIUS_CIRCLE, color);
+        }
+
+        function drawCircle(x, y, radius, color) {
+            //Starte mit dem Zeichnen des Kreises
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            //Ausfüllen des Kreises
             ctx.fillStyle = color;
-            ctx.fillRect(start_x, start_y, WIDTH_CELL, HEIGHT_CELL);
+            ctx.fill();
+            //Border des Kreises auf die gleiche Farbe setzen
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = color;
+            //eigentliches zeichnen des Kreises
+            ctx.stroke();
         }
 
         function computeNextBoard(x){
