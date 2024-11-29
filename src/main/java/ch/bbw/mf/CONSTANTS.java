@@ -7,7 +7,7 @@ public class CONSTANTS {
 
     public static String CHAR_PLAYER_1 = "X";
     public static String CHAR_PLAYER_2 = "O";
-    public static String CHAR_EMPTY_FIELD = "L";
+    public static String CHAR_EMPTY_FIELD = "-";
 
     public static int BOARD_HEIGHT = 6;
     public static int BOARD_WIDTH = 7;

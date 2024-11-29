@@ -1,6 +1,7 @@
 package ch.bbw.mf;
 
 import java.io.IOException;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class OutputHandler {
@@ -38,10 +39,18 @@ public class OutputHandler {
         String plyersymbol = currentPlayer == 1 ? CONSTANTS.CHAR_PLAYER_1 : CONSTANTS.CHAR_PLAYER_2;
 
         System.out.print("Player " + currentPlayer + ", you are: " + plyersymbol + " please select Row for next move: ");
-        int row = scanner.nextInt();
+
+        int row = Integer.MAX_VALUE;
+        try {
+             row = scanner.nextInt();
+        }catch (InputMismatchException e){
+            System.out.println("Please enter a valid row number");
+            row = promptForUserInput(currentPlayer, size_board);
+        }
 
         if (row <= 0 || row > size_board){
-            throw new IllegalArgumentException("Illegal Row number: " + row);
+            //throw new IllegalArgumentException("Illegal Row number: " + row);
+            row = promptForUserInput(currentPlayer, size_board);
         }
 
         return row;
