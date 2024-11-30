@@ -149,24 +149,6 @@
             }
         }
 
-        function getUserInput(canvas, event){
-            if(!CAN_PLAYER_INPUT){return;}
-            //Herausfinden der X Koordinate, relativ zum Canvas
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-
-            //Benutzer Input überprüfen
-            let user_input = Math.floor((x / (WIDTH_CELL +  BORDER_WIDTH)));
-            if(DEBUG) console.log("User inputted the following Row: " + user_input);
-
-            if (DEBUG) console.log("Checking User Input");
-            if (user_input < 0 || user_input > BORDER_WIDTH){return;}
-
-            if(DEBUG) console.log("Computing next Board");
-            //Nächstes Board Berechnen
-            computeNextBoard(user_input);
-        }
-
         function createBoard(width, height){
             if(DEBUG) console.log("Creating new Board");
             //Erstelle einen Array mit height-vielen Zeilen
@@ -185,53 +167,32 @@
 
             for (let y = 0; y < HEIGHT_BOARD; y++) {
                 for (let x = 0; x < WIDTH_BOARD; x++) {
+                    //Berechne Mittelpunkt für Kreis
                     let start_x = Math.floor((2 * x + 1) * (BORDER_WIDTH + WIDTH_CELL) / 2);
                     let start_y = Math.floor((2 * y + 1) * (BORDER_WIDTH + HEIGHT_CELL) / 2);
-                    if(DEBUG) console.log("Carving Circle from Board, center x: " + start_x + ", center y: " + start_y);
 
+                    if(DEBUG) console.log("Carving Circle from Board, center x: " + start_x + ", center y: " + start_y);
                     drawCircle(start_x, start_y, RADIUS_CIRCLE, "white");
                 }
             }
         }
 
-        function drawBoard(){
-            for (let y = 0; y < HEIGHT_BOARD; y++){
-                for (let x = 0; x < WIDTH_BOARD; x++){
-                    //Entsprechend dem Board-Code die elemente zeichnen
-                    if (BOARD[y][x] === 0){
-                        drawCell(x, y, "white");
-                    }else if (BOARD[y][x] === 1){
-                        drawCell(x, y, COLOR_PLAYER_1);
-                    }else if (BOARD[y][x] === 2){
-                        drawCell(x, y, COLOR_PLAYER_2);
-                    }else {
-                        restartGame();
-                        console.error("An Error Occurred while trying to render the Board on the Canvas, Illegal State: " + BOARD[y][x] + " at x: " + x + ", y: " + y);
-                    }
-                }
-            }
-        }
+        function getUserInput(canvas, event){
+            if(!CAN_PLAYER_INPUT){return;}
+            //Herausfinden der X Koordinate, relativ zum Canvas
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
 
-        function drawCell(x, y, color){
-            let start_x = Math.floor((2 * x + 1) * ((BORDER_WIDTH + WIDTH_CELL) / 2));
-            let start_y = Math.floor((2 * y + 1) * ((BORDER_WIDTH + HEIGHT_CELL) / 2));
+            //Benutzer Input überprüfen
+            let user_input = Math.floor((x / (WIDTH_CELL +  BORDER_WIDTH)));
+            if(DEBUG) console.log("User inputted the following Row: " + user_input);
 
-            if (DEBUG) console.log("Drawing Circle for Player: " + CURRENT_PLAYER + ", center x: " + start_x + ", center y: " + start_y);
-            drawCircle(start_x, start_y, RADIUS_CIRCLE, color);
-        }
+            if (DEBUG) console.log("Checking User Input");
+            if (user_input < 0 || user_input > BORDER_WIDTH){return;}
 
-        function drawCircle(x, y, radius, color) {
-            //Starte mit dem Zeichnen des Kreises
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, 2 * Math.PI);
-            //Ausfüllen des Kreises
-            ctx.fillStyle = color;
-            ctx.fill();
-            //Border des Kreises auf die gleiche Farbe setzen
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = color;
-            //eigentliches zeichnen des Kreises
-            ctx.stroke();
+            if(DEBUG) console.log("Computing next Board");
+            //Nächstes Board Berechnen
+            computeNextBoard(user_input);
         }
 
         async function computeNextBoard(x) {
@@ -282,12 +243,55 @@
         }
 
         function animateCell(x, y, prev_x, prev_y) {
+            //Error prevention
             if (prev_y < 0){
                 BOARD[y][x] = CURRENT_PLAYER;
                 return;
             }
+            //Bewege Zelle um eine Position nach unten
             BOARD[prev_y][prev_x] = 0;
             BOARD[y][x] = CURRENT_PLAYER;
+        }
+
+        function drawBoard(){
+            for (let y = 0; y < HEIGHT_BOARD; y++){
+                for (let x = 0; x < WIDTH_BOARD; x++){
+                    //Entsprechend dem Board-Code die elemente zeichnen
+                    if (BOARD[y][x] === 0){
+                        drawCell(x, y, "white");
+                    }else if (BOARD[y][x] === 1){
+                        drawCell(x, y, COLOR_PLAYER_1);
+                    }else if (BOARD[y][x] === 2){
+                        drawCell(x, y, COLOR_PLAYER_2);
+                    }else {
+                        restartGame();
+                        console.error("An Error Occurred while trying to render the Board on the Canvas, Illegal State: " + BOARD[y][x] + " at x: " + x + ", y: " + y);
+                    }
+                }
+            }
+        }
+
+        function drawCell(x, y, color){
+            //Berechnen der mittleren Koordinaten für den Kreis
+            let start_x = Math.floor((2 * x + 1) * ((BORDER_WIDTH + WIDTH_CELL) / 2));
+            let start_y = Math.floor((2 * y + 1) * ((BORDER_WIDTH + HEIGHT_CELL) / 2));
+
+            if (DEBUG) console.log("Drawing Circle for Player: " + CURRENT_PLAYER + ", center x: " + start_x + ", center y: " + start_y);
+            drawCircle(start_x, start_y, RADIUS_CIRCLE, color);
+        }
+
+        function drawCircle(x, y, radius, color) {
+            //Starte mit dem Zeichnen des Kreises
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            //Ausfüllen des Kreises
+            ctx.fillStyle = color;
+            ctx.fill();
+            //Border des Kreises auf die gleiche Farbe setzen
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = color;
+            //eigentliches zeichnen des Kreises
+            ctx.stroke();
         }
 
         function hasPlayerWonGame(x, y) {
