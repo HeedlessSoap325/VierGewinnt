@@ -99,9 +99,11 @@
 
         const DEBUG = false;
 
+        const CELL_FALL_ANIMATION_TIMEOUT = 250;
+
         let BOARD = undefined;
         let CURRENT_PLAYER = 1;
-        let GAME_ACTIVE = false;
+        let CAN_PLAYER_INPUT = false;
 
         function startGame(){
             //Aufsetzen des Boards und Canvas
@@ -117,12 +119,12 @@
             START_BUTTON.setAttribute("disabled", "disabled");
             RESET_BUTTON.removeAttribute("disabled");
             OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn."
-            GAME_ACTIVE = true;
+            CAN_PLAYER_INPUT = true;
         }
 
         function restartGame(){
             //Game Loop unterbrechen
-            GAME_ACTIVE = false;
+            CAN_PLAYER_INPUT = false;
 
             //Board resetten
             if (DEBUG) console.log("Resetting Game");
@@ -134,7 +136,7 @@
             initCanvas();
             CURRENT_PLAYER = 1;
             OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn."
-            GAME_ACTIVE = true;
+            CAN_PLAYER_INPUT = true;
         }
 
         function initBoard() {
@@ -148,7 +150,7 @@
         }
 
         function getUserInput(canvas, event){
-            if(!GAME_ACTIVE){return;}
+            if(!CAN_PLAYER_INPUT){return;}
             //Herausfinden der X Koordinate, relativ zum Canvas
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
@@ -197,7 +199,7 @@
                 for (let x = 0; x < WIDTH_BOARD; x++){
                     //Entsprechend dem Board-Code die elemente zeichnen
                     if (BOARD[y][x] === 0){
-
+                        drawCell(x, y, "white");
                     }else if (BOARD[y][x] === 1){
                         drawCell(x, y, COLOR_PLAYER_1);
                     }else if (BOARD[y][x] === 2){
@@ -232,19 +234,25 @@
             ctx.stroke();
         }
 
-        function computeNextBoard(x){
+        async function computeNextBoard(x) {
             for (let y = 0; y < HEIGHT_BOARD; y++) {
                 //Spieler farbe in den unterst möglichen Slot malen
-                if(!freeUnderneath(x, y)){
+                if (freeUnderneath(x, y)) {
+                    CAN_PLAYER_INPUT = false;
+                    if (DEBUG) console.log("Animating cell at x: " + x + ", y: " + y);
+                    animateCell(x, y, x, y - 1);
+                    drawBoard();
+                    await new Promise(r => setTimeout(r, CELL_FALL_ANIMATION_TIMEOUT));
+                } else {
                     //Überschreiben am oberen Rand vermeiden
                     if (BOARD[y][x] !== 0) {
                         OUTPUT_DIV.innerText = "this Row is already filled, please choose another one!";
                         break;
                     }
                     if (DEBUG) console.log("Setting x: " + x + ", y: " + y + ", to Player: " + CURRENT_PLAYER);
-                    BOARD[y][x] = CURRENT_PLAYER;
+                    animateCell(x, y, x, y - 1);
 
-                    if(DEBUG) console.log("Drawing Board to Screen");
+                    if (DEBUG) console.log("Drawing Board to Screen");
                     drawBoard();
 
                     //Überprüfen, ob ein Spieler gewonnen hat
@@ -253,13 +261,14 @@
 
                         if (DEBUG) console.log("Stopping Game because a Player Won");
                         //Unterbrechen des game Loops
-                        GAME_ACTIVE = false;
+                        CAN_PLAYER_INPUT = false;
                         break;
                     }
 
-                    if(DEBUG) console.log("Switching Player");
+                    if (DEBUG) console.log("Switching Player");
                     CURRENT_PLAYER = CURRENT_PLAYER === 1 ? 2 : 1;
-                    OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn."
+                    OUTPUT_DIV.innerText = "It is Player " + CURRENT_PLAYER + "'s turn.";
+                    CAN_PLAYER_INPUT = true;
                     break;
                 }
             }
@@ -270,6 +279,15 @@
                 return false;
             }
             return BOARD[y + 1][x] !== 1 && BOARD[y + 1][x] !== 2;
+        }
+
+        function animateCell(x, y, prev_x, prev_y) {
+            if (prev_y < 0){
+                BOARD[y][x] = CURRENT_PLAYER;
+                return;
+            }
+            BOARD[prev_y][prev_x] = 0;
+            BOARD[y][x] = CURRENT_PLAYER;
         }
 
         function hasPlayerWonGame(x, y) {
