@@ -4,6 +4,7 @@ This Project is a very simple clone of the Game "Connect Four". It has both a We
 # Running the Web Application
 Just open th File ./scr/main/resources/VierGewinnt.html. By clicking in the coresponding circle, your Tokenwill be place there and fall to the Bottom.
 You can change every aspect of the Game by modifying the Constants at the Top of the File.
+Or you can visit the [Github Page](https://heedlesssoap325.github.io/VierGewinnt/).
 
 # Running the Console Application 
 Just Run the File ./scr/main/java/ch/bbw/mf/VierGewinnt.java in any way you like. 
