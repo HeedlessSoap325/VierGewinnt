@@ -1,0 +1,28 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Runs when pushing to 'main' branch
+
+permissions:
+  contents: write  # Gives GitHub Actions permission to push changes
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create deployment directory
+        run: |
+          mkdir public
+          cp src/main/resources/VierGewinnt.html public/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages   # Deploy to 'gh-pages' branch
+          folder: public     # Upload files from 'public' folder
